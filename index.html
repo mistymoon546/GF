@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Korean Grid-Interactive DC Matrix</title>
+  <meta name="description" content="한국형 계통연계형 데이터센터 계절별 운영 매트릭스" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+
+  <header class="app-header">
+    <div class="header-left">
+      <span class="logo-icon">⚡</span>
+      <div>
+        <div class="app-title">Korean Grid-Interactive DC Seasonal Operation Matrix</div>
+        <div class="app-subtitle">글로벌 프론티어 연구팀 · 한국형 계통연계형 데이터센터 운영 시뮬레이터</div>
+      </div>
+    </div>
+    <div class="sim-badge"><span class="badge-dot"></span>시뮬레이션 가동 중</div>
+  </header>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="tab-site">🗺️ 입지 평가</button>
+    <button class="tab-btn" data-tab="tab-matrix">📊 계절별 운영 매트릭스</button>
+    <button class="tab-btn" data-tab="tab-decision">🔀 의사결정 모델</button>
+    <button class="tab-btn" data-tab="tab-compare">📈 도입 효과 비교</button>
+  </nav>
+
+  <!-- ===== 탭 1: 입지 평가 ===== -->
+  <div class="tab-content active" id="tab-site">
+    <div class="site-layout">
+
+      <!-- 왼쪽 패널 -->
+      <aside class="left-panel">
+
+        <!-- STEP 1: 조건 토글 -->
+        <div class="step-header"><span class="step-num">STEP 1</span> 시나리오 조건 설정</div>
+        <div class="toggle-guide">조건을 선택한 후 시뮬레이션을 시작하세요</div>
+
+        <div class="toggle-grid" id="toggleGrid">
+          <div class="toggle-card" id="tc-regulation" onclick="toggleCondition('regulation')">
+            <div class="tc-top">
+              <span class="tc-icon">📋</span>
+              <div class="tc-switch" id="tsw-regulation"><div class="tsw-ball"></div></div>
+            </div>
+            <div class="tc-name">제도 완화</div>
+            <div class="tc-desc">전력 수요 허가 간소화</div>
+            <div class="tc-state off" id="tst-regulation">OFF</div>
+          </div>
+          <div class="toggle-card" id="tc-coolingEff" onclick="toggleCondition('coolingEff')">
+            <div class="tc-top">
+              <span class="tc-icon">❄️</span>
+              <div class="tc-switch" id="tsw-coolingEff"><div class="tsw-ball"></div></div>
+            </div>
+            <div class="tc-name">냉각 효율화</div>
+            <div class="tc-desc">냉각 전력소모 절감</div>
+            <div class="tc-state off" id="tst-coolingEff">OFF</div>
+          </div>
+          <div class="toggle-card" id="tc-renewable" onclick="toggleCondition('renewable')">
+            <div class="tc-top">
+              <span class="tc-icon">☀️</span>
+              <div class="tc-switch" id="tsw-renewable"><div class="tsw-ball"></div></div>
+            </div>
+            <div class="tc-name">재생에너지 확대</div>
+            <div class="tc-desc">발전량 증가 · 탄소 절감</div>
+            <div class="tc-state off" id="tst-renewable">OFF</div>
+          </div>
+          <div class="toggle-card" id="tc-acceptance" onclick="toggleCondition('acceptance')">
+            <div class="tc-top">
+              <span class="tc-icon">🤝</span>
+              <div class="tc-switch" id="tsw-acceptance"><div class="tsw-ball"></div></div>
+            </div>
+            <div class="tc-name">사회적 수용성</div>
+            <div class="tc-desc">님비 저항 완화</div>
+            <div class="tc-state off" id="tst-acceptance">OFF</div>
+          </div>
+        </div>
+
+        <div class="scenario-row">
+          <span class="scenario-tag current">⚫ 전부 OFF = 현재 상황</span>
+          <span class="scenario-tag ideal">⚡ 전부 ON = 이상향</span>
+        </div>
+
+        <button class="unlock-btn" id="unlockBtn" onclick="unlockSliders()">
+          ▶ 조건 확인 · 세부 시뮬레이션 시작
+        </button>
+
+        <!-- STEP 2: 슬라이더 (잠금) -->
+        <div class="sliders-wrap locked" id="slidersWrap">
+          <div class="lock-overlay" id="lockOverlay">
+            <div class="lock-msg">⬆ STEP 1 조건 설정 후 활성화</div>
+          </div>
+
+          <div class="step-header" style="margin-top:10px"><span class="step-num">STEP 2</span> 세부 조건 설정</div>
+
+          <div class="season-tabs" id="seasonTabs">
+            <button class="season-btn active" data-season="spring">🌸 봄</button>
+            <button class="season-btn" data-season="summer">☀️ 여름</button>
+            <button class="season-btn" data-season="autumn">🍂 가을</button>
+            <button class="season-btn" data-season="winter">❄️ 겨울</button>
+          </div>
+
+          <div class="slider-group">
+            <div class="ctrl-row">
+              <span class="ctrl-label">외기 온도</span>
+              <span class="ctrl-val" id="tempLabel">33°C</span>
+            </div>
+            <input type="range" class="slider" id="tempSlider" min="20" max="45" value="33" />
+
+            <div class="ctrl-row">
+              <span class="ctrl-label">냉각 부하</span>
+              <span class="ctrl-val" id="coolingLabel">보통</span>
+            </div>
+            <input type="range" class="slider" id="coolingSlider" min="1" max="5" value="3" />
+
+            <div class="ctrl-row">
+              <span class="ctrl-label">소음 수준</span>
+              <span class="ctrl-val" id="noiseLabel">75 dB</span>
+            </div>
+            <input type="range" class="slider" id="noiseSlider" min="50" max="100" value="75" />
+
+            <div class="ctrl-row">
+              <span class="ctrl-label">전력 수요</span>
+              <span class="ctrl-val" id="powerLabel">200 MW</span>
+            </div>
+            <input type="range" class="slider" id="powerSlider" min="50" max="500" value="200" step="50" />
+
+            <div class="ctrl-row">
+              <span class="ctrl-label">재생에너지 비율</span>
+              <span class="ctrl-val" id="renewLabel">30%</span>
+            </div>
+            <input type="range" class="slider" id="renewSlider" min="0" max="100" value="30" step="10" />
+
+            <div class="ctrl-row">
+              <span class="ctrl-label">폐열 연계</span>
+              <span class="ctrl-val" id="heatLabel">미연계</span>
+            </div>
+            <input type="range" class="slider" id="heatSlider" min="0" max="3" value="0" />
+          </div>
+
+          <button class="run-btn" id="runBtn" onclick="runSimulation()">▶ 시뮬레이션 실행</button>
+        </div>
+      </aside>
+
+      <!-- 지도 -->
+      <section class="map-section">
+        <div class="map-top-bar">
+          <span class="map-title">한국 지역별 입지 적합도</span>
+          <div class="legend-row">
+            <span class="leg"><span class="leg-dot best"></span>최적</span>
+            <span class="leg"><span class="leg-dot good"></span>적합</span>
+            <span class="leg"><span class="leg-dot fair"></span>조건부</span>
+            <span class="leg"><span class="leg-dot poor"></span>부적합</span>
+          </div>
+        </div>
+        <div class="map-container">
+          <svg id="koreaMap" viewBox="0 0 600 700" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="season-info-bar">
+          <div class="si-item"><span class="si-icon">🌡️</span><span class="si-label">평균기온</span><strong id="statTemp">15°C</strong></div>
+          <div class="si-item"><span class="si-icon">⚡</span><span class="si-label">계통부하</span><strong id="statGrid">65%</strong></div>
+          <div class="si-item"><span class="si-icon">💧</span><span class="si-label">냉각수</span><strong id="statWater">양호</strong></div>
+          <div class="si-item"><span class="si-icon">☀️</span><span class="si-label">재생에너지</span><strong id="statRenew">40%</strong></div>
+        </div>
+      </section>
+
+      <!-- 결과 패널 -->
+      <aside class="right-panel">
+        <div class="panel-block">
+          <div class="pb-title">📊 입지 적합도 순위</div>
+          <div id="resultsList"><div class="result-empty">시뮬레이션을 실행하면 결과가 표시됩니다</div></div>
+        </div>
+        <div class="panel-block">
+          <div class="pb-title">✅ 체크리스트</div>
+          <div class="checklist" id="checklist">
+            <div class="chk-item" id="chkTemp"><span class="chk-icon">⬜</span><div><div class="chk-name">열환경 관리</div><div class="chk-sub" id="chkTempMsg">냉각 부하 허용 범위</div></div></div>
+            <div class="chk-item" id="chkNoise"><span class="chk-icon">⬜</span><div><div class="chk-name">소음 영향</div><div class="chk-sub" id="chkNoiseMsg">주거지 이격거리 확보</div></div></div>
+            <div class="chk-item" id="chkPower"><span class="chk-icon">⬜</span><div><div class="chk-name">전력 공급</div><div class="chk-sub" id="chkPowerMsg">전력망 수용 용량</div></div></div>
+            <div class="chk-item" id="chkPop"><span class="chk-icon">⬜</span><div><div class="chk-name">님비 리스크</div><div class="chk-sub" id="chkPopMsg">인구밀도 기준</div></div></div>
+            <div class="chk-item" id="chkRenew"><span class="chk-icon">⬜</span><div><div class="chk-name">재생에너지 연계</div><div class="chk-sub" id="chkRenewMsg">탄소중립 기여</div></div></div>
+            <div class="chk-item" id="chkHeat"><span class="chk-icon">⬜</span><div><div class="chk-name">폐열 활용</div><div class="chk-sub" id="chkHeatMsg">지역 난방 연계</div></div></div>
+          </div>
+        </div>
+        <div class="panel-block" id="regionDetailBlock" style="display:none">
+          <div class="pb-title">📍 <span id="detailRegionName">지역</span> 상세</div>
+          <div id="regionDetail"></div>
+        </div>
+        <div class="panel-block">
+          <div class="pb-title">⚠️ 경고</div>
+          <div id="warningsBox"><div class="no-warn">경고 없음</div></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ===== 탭 2: 계절별 운영 매트릭스 ===== -->
+  <div class="tab-content" id="tab-matrix">
+    <div class="matrix-layout">
+      <div class="matrix-season-bar">
+        <button class="mseason-btn active" data-mseason="summer">☀️ 여름 · 피크 대응</button>
+        <button class="mseason-btn" data-mseason="winter">❄️ 겨울 · 여유 활용</button>
+        <button class="mseason-btn" data-mseason="spring">🌸 봄 · 전환기</button>
+        <button class="mseason-btn" data-mseason="autumn">🍂 가을 · 최적 운영</button>
+      </div>
+
+      <!-- 24h 차트 -->
+      <div class="card-block">
+        <div class="card-head">
+          <div>
+            <div class="card-title" id="chartTitle">☀️ 여름 — 시간대별 전력 조정 범위</div>
+            <div class="card-note" id="chartNote">피크 시간대(14~17시) DC 유연 조정 최대화 필요</div>
+          </div>
+          <div class="humidity-badge" id="humidityBadge">🌫️ 습도 72% · 체감냉각 ×1.3</div>
+        </div>
+        <div class="chart-wrap"><canvas id="powerChart"></canvas></div>
+        <div class="chart-legend-row">
+          <span class="cl-item"><span class="cl-dot" style="background:#f87171"></span>계통 전체 부하</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#60a5fa"></span>DC 기본 소비</span>
+          <span class="cl-item"><span class="cl-dot" style="background:rgba(52,211,153,0.6)"></span>DC 유연 조정 범위</span>
+          <span class="cl-item"><span class="cl-dot" style="background:#fbbf24;border:2px dashed #fbbf24;background:none;width:18px;height:4px;border-radius:0;display:inline-block;vertical-align:middle"></span>습도 보정 냉각 부하</span>
+        </div>
+        <div class="flex-row">
+          <label class="flex-label">DC 유연성 수준 <span id="flexLevelLabel" class="val-badge">보통 (40%)</span></label>
+          <input type="range" class="slider" id="flexSlider" min="1" max="5" value="3" />
+        </div>
+      </div>
+
+      <!-- 2-Case 매트릭스 -->
+      <div class="card-block">
+        <div class="card-title" style="margin-bottom:14px">⚡ 2-Case 운영 우선순위 매트릭스</div>
+        <div class="twocase-grid">
+          <div class="case-card case-hot">
+            <div class="case-hd"><span class="case-badge red">Case A</span><div><b>여름 오후 + 전력 피크</b><br/><small>부하 높음 · 계통 긴장</small></div></div>
+            <div class="case-ctx"><span>외기 35°C+</span><span>계통 95%+</span><span>습도 70%+</span></div>
+            <div class="priority-list">
+              <div class="pi"><span class="pi-r">1</span><span class="pi-icon">💻</span><div><b>워크로드 이동</b><div class="pi-desc">AI Training → 심야 지연</div></div><span class="eff high">고효과</span></div>
+              <div class="pi"><span class="pi-r">2</span><span class="pi-icon">❄️</span><div><b>냉각 Setpoint 상향</b><div class="pi-desc">24→27°C 완화 (습도 고려)</div></div><span class="eff mid">중효과</span></div>
+              <div class="pi"><span class="pi-r">3</span><span class="pi-icon">🔋</span><div><b>BESS 방전</b><div class="pi-desc">저장 전력으로 피크 감축</div></div><span class="eff mid">중효과</span></div>
+              <div class="pi"><span class="pi-r">4</span><span class="pi-icon">♨️</span><div><b>폐열 공급 조절</b><div class="pi-desc">여름 난방 수요 낮음</div></div><span class="eff low">저효과</span></div>
+            </div>
+            <div class="case-ref">🌍 참조: PJM Grid-Interactive DC 수요반응</div>
+          </div>
+          <div class="case-card case-cold">
+            <div class="case-hd"><span class="case-badge blue">Case B</span><div><b>겨울 야간 + 전력 여유</b><br/><small>부하 낮음 · 재생 잉여</small></div></div>
+            <div class="case-ctx"><span>외기 -5~5°C</span><span>계통 55%</span><span>건조 낮음</span></div>
+            <div class="priority-list">
+              <div class="pi"><span class="pi-r">1</span><span class="pi-icon">♨️</span><div><b>폐열 → 지역난방</b><div class="pi-desc">핵심 편익 — 최고 우선순위</div></div><span class="eff high">고효과</span></div>
+              <div class="pi"><span class="pi-r">2</span><span class="pi-icon">💻</span><div><b>워크로드 집중</b><div class="pi-desc">잉여 재생에너지 AI로 흡수</div></div><span class="eff high">고효과</span></div>
+              <div class="pi"><span class="pi-r">3</span><span class="pi-icon">🔋</span><div><b>BESS 충전</b><div class="pi-desc">잉여 전력 저장 → 주간 대비</div></div><span class="eff mid">중효과</span></div>
+              <div class="pi"><span class="pi-r">4</span><span class="pi-icon">❄️</span><div><b>외기 냉각 극대화</b><div class="pi-desc">저온 외기 → 기계 냉각 최소화</div></div><span class="eff mid">중효과</span></div>
+            </div>
+            <div class="case-ref">🌍 참조: Espoo(핀란드) 지역난방 연계 모델</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 계절별 편익 카드 -->
+      <div class="card-block">
+        <div class="card-title" style="margin-bottom:14px">🌿 계절 × 계통상황 × DC 유연 방안 × 지역 편익</div>
+        <div class="benefit4-grid">
+          <div class="b4-card spring">
+            <div class="b4-season">🌸 봄</div>
+            <div class="b4-row"><span class="b4-tag">계통</span> 60~70% · 황사 주의</div>
+            <div class="b4-row"><span class="b4-tag">DC 방안</span> 외기냉각 부분 · Setpoint 최적화</div>
+            <div class="b4-row accent-green"><span class="b4-tag">지역 편익</span> 온실 난방 · 농업 폐열 (저강도)</div>
+          </div>
+          <div class="b4-card summer">
+            <div class="b4-season">☀️ 여름</div>
+            <div class="b4-row"><span class="b4-tag">계통</span> 피크 95%+ · 냉방 급증 · 고습도</div>
+            <div class="b4-row"><span class="b4-tag">DC 방안</span> 워크로드 야간 이동 · BESS 방전</div>
+            <div class="b4-row accent-orange"><span class="b4-tag">지역 편익</span> Grid-Interactive — 계통 안정화</div>
+          </div>
+          <div class="b4-card autumn">
+            <div class="b4-season">🍂 가을</div>
+            <div class="b4-row"><span class="b4-tag">계통</span> 60~65% · 최적 운영 시즌</div>
+            <div class="b4-row"><span class="b4-tag">DC 방안</span> 외기냉각 최대화 · BESS 충전</div>
+            <div class="b4-row accent-cyan"><span class="b4-tag">지역 편익</span> 농산물 건조 폐열 · 에너지 자급</div>
+          </div>
+          <div class="b4-card winter">
+            <div class="b4-season">❄️ 겨울</div>
+            <div class="b4-row"><span class="b4-tag">계통</span> 85%+ · 풍력 강함 · 건조</div>
+            <div class="b4-row"><span class="b4-tag">DC 방안</span> 폐열 최대 공급 · Training 야간 집중</div>
+            <div class="b4-row accent-red"><span class="b4-tag">지역 편익</span> 지역난방 핵심 공급 (Espoo 모델)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 탭 3: 의사결정 모델 ===== -->
+  <div class="tab-content" id="tab-decision">
+    <div class="decision-layout">
+      <div class="decision-top">
+        <h2 class="dt-title">의사결정 모델 — 지역별 입지 시나리오 비교</h2>
+        <p class="dt-sub">지역을 선택하면 현재 상황(좌)과 설정한 조건 개선 시나리오(우)를 비교합니다</p>
+        <div class="decision-region-row">
+          <label class="dr-label">평가 지역 선택</label>
+          <select class="region-select" id="decisionRegion" onchange="renderDecision()">
+            <option value="jeonnam">전라남도 — 재생에너지 선도 지역</option>
+            <option value="gangwon">강원특별자치도 — 청정 자연환경형</option>
+            <option value="gyeonggi">경기도 — 수도권 근접형</option>
+            <option value="ulsan">울산광역시 — 산업단지 연계형</option>
+            <option value="chungnam">충청남도 — 서해안 풍력형</option>
+            <option value="jeonbuk">전북특별자치도 — 새만금 연계형</option>
+          </select>
+          <button class="small-btn" onclick="renderDecision()">▶ 비교 분석</button>
+        </div>
+      </div>
+
+      <div class="compare-two" id="decisionCompare">
+        <div class="ct-col ct-left" id="dcLeft">
+          <div class="ct-badge ct-badge-cur">⚫ 현재 상황 (전부 OFF)</div>
+          <div class="ct-content" id="dcLeftContent"></div>
+        </div>
+        <div class="ct-mid">
+          <div class="ct-arrow">→</div>
+          <div class="ct-mid-label">조건 개선</div>
+        </div>
+        <div class="ct-col ct-right" id="dcRight">
+          <div class="ct-badge ct-badge-imp">⚡ 개선 시나리오</div>
+          <div class="ct-content" id="dcRightContent"></div>
+        </div>
+      </div>
+
+      <!-- Step 1·2·3 플로우 요약 -->
+      <div class="decision-flow" id="decisionFlow"></div>
+    </div>
+  </div>
+
+  <!-- ===== 탭 4: 도입 효과 비교 ===== -->
+  <div class="tab-content" id="tab-compare">
+    <div class="compare-layout">
+      <div class="compare-top">
+        <h2 class="ct-main-title">Grid-Interactive DC 도입 효과 비교</h2>
+        <p class="ct-main-sub">의사결정 모델에서 선택한 지역 기준 · 기존 DC vs Grid-Interactive DC</p>
+        <div class="compare-region-info" id="compareRegionInfo"></div>
+      </div>
+
+      <div class="compare-two">
+        <div class="ct-col ct-left">
+          <div class="ct-badge ct-badge-old">📦 기존 데이터센터 (일반형)</div>
+          <div class="ct-content" id="compareLeft"></div>
+        </div>
+        <div class="ct-mid">
+          <div class="ct-arrow">→</div>
+          <div class="ct-mid-label">개선</div>
+        </div>
+        <div class="ct-col ct-right">
+          <div class="ct-badge ct-badge-new">⚡ Grid-Interactive DC</div>
+          <div class="ct-content" id="compareRight"></div>
+        </div>
+      </div>
+
+      <div class="improvement-summary" id="improvementSummary"></div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-left">Korean Grid-Interactive DC Seasonal Operation Matrix · 글로벌 프론티어</div>
+    <div class="footer-right">
+      <button class="footer-btn" onclick="exportReport()">📋 보고서 저장</button>
+      <button class="footer-btn" onclick="resetAll()">🔄 초기화</button>
+      <span id="footerClock"></span>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="map.js"></script>
+  <script src="simulation.js"></script>
+  <script src="chart-power.js"></script>
+  <script src="matrix.js"></script>
+  <script src="decision.js"></script>
+  <script src="comparison.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
